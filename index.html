@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电商推广ROI计算器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/github.min.css">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            secondary: '#475569',
+            success: '#10b981',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+            dark: {
+              bg: '#121212',
+              card: '#1e1e1e',
+              border: '#333333',
+              text: '#e0e0e0',
+              textLight: '#9e9e9e'
+            }
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-elevation-1 {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .card-hover {
+        transition: all 0.25s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.07), 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      .input-focus {
+        @apply focus:ring-2 focus:ring-primary/30 focus:border-primary focus:outline-none;
+      }
+      .btn-transition {
+        @apply transition-all duration-200 ease-in-out;
+      }
+      .loading-pulse {
+        display: inline-flex;
+        align-items: center;
+      }
+      .loading-pulse span {
+        width: 8px;
+        height: 8px;
+        margin: 0 2px;
+        background-color: #2563eb;
+        border-radius: 50%;
+        animation: pulse 1.4s infinite ease-in-out both;
+      }
+      .loading-pulse span:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      .loading-pulse span:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+      @keyframes pulse {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+    }
+  </style>
+  
+  <!-- 黑暗模式样式 -->
+  <style>
+    body.dark {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    
+    body.dark .bg-white {
+      background-color: #1e1e1e;
+    }
+    
+    body.dark .bg-neutral-50 {
+      background-color: #2d2d2d;
+    }
+    
+    body.dark .text-neutral-800 {
+      color: #e0e0e0;
+    }
+    
+    body.dark .text-neutral-700 {
+      color: #d0d0d0;
+    }
+    
+    body.dark .text-neutral-600 {
+      color: #b0b0b0;
+    }
+    
+    body.dark .text-neutral-500 {
+      color: #9e9e9e;
+    }
+    
+    body.dark .border-neutral-200,
+    body.dark .border-neutral-300 {
+      border-color: #333333;
+    }
+    
+    body.dark input[type="text"],
+    body.dark input[type="number"],
+    body.dark textarea {
+      background-color: #2d2d2d;
+      color: #e0e0e0;
+      border-color: #333333;
+    }
+    
+    body.dark .card-elevation-1 {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    
+    body.dark .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.5);
+    }
+    
+    body.dark header,
+    body.dark footer {
+      background-color: #1e1e1e;
+      border-color: #333333;
+    }
+    
+    body.dark #historyModal > div {
+      background-color: #1e1e1e;
+      border-color: #333333;
+    }
+    
+    body.dark .hover\:bg-neutral-100:hover {
+      background-color: #333333;
+    }
+    
+    body.dark .fa-github {
+      color: #ffffff;
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-neutral-50 text-neutral-800 min-h-screen transition-colors duration-300">
+  <header class="bg-white border-b border-neutral-200 sticky top-0 z-50 transition-all duration-300">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-line-chart text-primary text-2xl"></i>
+        <h1 class="text-xl md:text-2xl font-bold text-neutral-800 transition-colors duration-300">电商推广ROI计算器</h1>
+      </div>
+      <div class="flex items-center space-x-2">
+        <a href="https://github.com/Azad-sl/roi/" target="_blank" rel="noopener noreferrer" 
+           class="p-2 rounded-full hover:bg-neutral-100 transition-colors" title="查看GitHub开源仓库">
+          <i class="fa fa-github text-neutral-600 transition-colors duration-300"></i>
+        </a>
+        <button id="themeToggle" class="p-2 rounded-full hover:bg-neutral-100 transition-colors" title="切换黑暗模式">
+          <i class="fa fa-moon-o text-neutral-600 transition-colors duration-300"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-6 md:py-8">
+    <!-- 介绍卡片 -->
+    <div class="bg-white rounded-xl p-4 md:p-6 card-elevation-1 mb-6 transition-all duration-100">
+      <p class="text-neutral-600 transition-colors duration-300">
+        精确计算推广时的保底ROI（不亏本的最低标准），并提供分阶段的ROI设置建议，帮助您优化电商推广策略。
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左侧：输入区域 -->
+      <div class="lg:col-span-1 space-y-6">
+        <!-- 参数输入卡片 -->
+        <div class="bg-white rounded-xl p-5 card-elevation-1 transition-all duration-300">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-calculator text-primary mr-2"></i>
+            <span class="transition-colors duration-300">产品参数设置</span>
+          </h2>
+          
+          <form id="roiForm" class="space-y-4">
+            <div class="space-y-2">
+              <label for="productName" class="block text-sm font-medium text-neutral-700 transition-colors duration-300">商品名称</label>
+              <input type="text" id="productName" 
+                class="w-full px-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300"
+                placeholder="输入商品名称（如：休闲零食沙琪玛）">
+            </div>
+            
+            <div class="space-y-2">
+              <label for="cost" class="block text-sm font-medium text-neutral-700 transition-colors duration-300">产品基础成本（元）</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 transition-colors duration-300">¥</span>
+                <input type="number" id="cost" step="0.01" min="0" required
+                  class="w-full pl-8 pr-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300"
+                  placeholder="包含采购、物流、打包成本">
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label for="price" class="block text-sm font-medium text-neutral-700 transition-colors duration-300">产品售价（元）</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 transition-colors duration-300">¥</span>
+                <input type="number" id="price" step="0.01" min="0" required
+                  class="w-full pl-8 pr-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300"
+                  placeholder="消费者实际支付价格">
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label for="commission" class="block text-sm font-medium text-neutral-700 transition-colors duration-300">平台抽成比例（%）</label>
+              <div class="relative">
+                <input type="number" id="commission" step="0.1" min="0" max="100" value="2.0" required
+                  class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300"
+                  placeholder="如拼多多常规2%">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 transition-colors duration-300">%</span>
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label for="returnRate" class="block text-sm font-medium text-neutral-700 transition-colors duration-300">退货率（%）</label>
+              <div class="relative">
+                <input type="number" id="returnRate" step="0.1" min="0" max="100" value="5.0" required
+                  class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300"
+                  placeholder="行业平均水平">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 transition-colors duration-300">%</span>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        <!-- AI咨询卡片 -->
+        <div class="bg-white rounded-xl p-5 card-elevation-1 transition-all duration-300">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-comments-o text-primary mr-2"></i>
+            <span class="transition-colors duration-300">咨询AI</span>
+          </h2>
+          
+          <div class="space-y-4">
+            <!-- AI模型选择 -->
+            <div class="flex border border-neutral-300 rounded-lg overflow-hidden transition-all duration-300">
+              <button id="useBuiltinAi" class="flex-1 py-2 text-sm font-medium transition-colors duration-300 bg-primary text-white">
+                内置智谱AI
+              </button>
+              <button id="useCustomAi" class="flex-1 py-2 text-sm font-medium transition-colors duration-300 bg-neutral-100 text-neutral-700">
+                自定义AI
+              </button>
+            </div>
+            
+            <!-- 内置AI提示 -->
+            <div id="builtinAiInfo" class="p-3 bg-neutral-50 rounded-lg text-sm transition-all duration-300">
+              <i class="fa fa-info-circle text-primary mr-1"></i>
+              <span class="transition-colors duration-300">已内置智谱AI模型，可直接使用</span>
+            </div>
+            
+            <!-- 自定义AI配置（默认隐藏） -->
+            <div id="customAiSettings" class="grid grid-cols-1 gap-3 hidden">
+              <div>
+                <input type="text" id="apiUrl" placeholder="AI API地址"
+                  class="w-full px-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300 text-sm">
+              </div>
+              <div>
+                <input type="text" id="apiKey" placeholder="API密钥"
+                  class="w-full px-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300 text-sm">
+              </div>
+              <div>
+                <input type="text" id="aiModel" placeholder="模型名称"
+                  class="w-full px-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300 text-sm">
+                <p class="text-xs text-neutral-500 mt-1 transition-colors duration-300">根据您使用的AI服务填写对应的模型名称</p>
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <div class="flex justify-between">
+                <label for="aiPrompt" class="block text-sm font-medium text-neutral-700 transition-colors duration-300">提问内容</label>
+                <button type="button" id="generatePrompt" class="text-xs text-primary hover:text-primary/80 btn-transition">
+                  生成提问
+                </button>
+              </div>
+              <textarea id="aiPrompt" rows="4" placeholder="请输入您的问题..."
+                class="w-full px-3 py-2 border border-neutral-300 rounded-lg input-focus bg-white text-neutral-800 transition-all duration-300 text-sm"></textarea>
+            </div>
+            
+            <button type="button" id="sendToAi" class="w-full bg-primary text-white py-2.5 px-4 rounded-lg flex items-center justify-center btn-transition">
+              <i class="fa fa-paper-plane mr-2"></i>发送给AI
+            </button>
+            
+            <div id="aiResponseContainer" class="hidden mt-4">
+              <div class="flex justify-between items-center mb-2">
+                <label class="block text-sm font-medium text-neutral-700 transition-colors duration-300">AI回复</label>
+                <button id="copyAiResponse" class="text-xs text-primary hover:text-primary/80 flex items-center btn-transition" disabled>
+                  <i class="fa fa-copy mr-1"></i>复制
+                </button>
+              </div>
+              <div id="aiLoading" class="hidden text-center py-4">
+                <div class="loading-pulse mx-auto">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <p class="text-sm text-neutral-500 mt-2 transition-colors duration-300">正在获取AI回复...</p>
+              </div>
+              <div id="aiError" class="hidden p-3 bg-danger/10 text-danger rounded-lg text-sm transition-all duration-300"></div>
+              <div id="aiResponse" class="p-3 bg-neutral-50 rounded-lg text-sm prose prose-sm max-w-none transition-all duration-300"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-xl p-5 card-elevation-1 transition-all duration-300">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-cogs text-primary mr-2"></i>
+            <span class="transition-colors duration-300">计算过程</span>
+          </h2>
+          
+          <div id="calculationSteps" class="space-y-4 opacity-50">
+            <!-- 计算步骤内容 -->
+            <div class="p-4 border border-neutral-200 rounded-lg card-hover transition-all duration-300">
+              <div class="font-medium mb-1 transition-colors duration-300">1. 平台抽成金额计算</div>
+              <div class="text-sm text-neutral-600 transition-colors duration-300">抽成金额 = 售价 × 抽成比例</div>
+              <div class="mt-2 font-mono text-sm bg-neutral-50 p-2 rounded transition-all duration-300" id="step1">请输入参数以计算</div>
+            </div>
+            
+            <div class="p-4 border border-neutral-200 rounded-lg card-hover transition-all duration-300">
+              <div class="font-medium mb-1 transition-colors duration-300">2. 实际总成本（含抽成）</div>
+              <div class="text-sm text-neutral-600 transition-colors duration-300">实际总成本 = 基础成本 + 抽成金额</div>
+              <div class="mt-2 font-mono text-sm bg-neutral-50 p-2 rounded transition-all duration-300" id="step2">请输入参数以计算</div>
+            </div>
+            
+            <div class="p-4 border border-neutral-200 rounded-lg card-hover transition-all duration-300">
+              <div class="font-medium mb-1 transition-colors duration-300">3. 产品毛利率计算</div>
+              <div class="text-sm text-neutral-600 transition-colors duration-300">毛利率 = (售价-实际总成本)/售价 × 100%</div>
+              <div class="mt-2 font-mono text-sm bg-neutral-50 p-2 rounded transition-all duration-300" id="step3">请输入参数以计算</div>
+            </div>
+            
+            <div class="p-4 border border-neutral-200 rounded-lg card-hover transition-all duration-300">
+              <div class="font-medium mb-1 transition-colors duration-300">4. 保底ROI计算（核心）</div>
+              <div class="text-sm text-neutral-600 transition-colors duration-300">保底ROI = (1/毛利率) × (1+退货率)</div>
+              <div class="mt-2 font-mono text-sm bg-neutral-50 p-2 rounded transition-all duration-300" id="step4">请输入参数以计算</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-5 card-elevation-1 transition-all duration-300">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-balance-scale text-primary mr-2"></i>
+            <span class="transition-colors duration-300">保底ROI结果</span>
+          </h2>
+          
+          <div id="resultContainer" class="flex flex-col items-center justify-center py-6">
+            <div id="productNameDisplay" class="text-neutral-500 mb-2 text-sm transition-colors duration-300"></div>
+            <div class="text-5xl font-bold mb-4 text-neutral-400 transition-colors duration-300" id="roiResult">--</div>
+            <div class="text-center text-neutral-500 max-w-md transition-colors duration-300" id="resultExplanation">
+              请输入产品参数以计算保底ROI
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-5 card-elevation-1 transition-all duration-300">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-lightbulb-o text-primary mr-2"></i>
+            <span class="transition-colors duration-300">分阶段ROI建议</span>
+          </h2>
+          
+          <div id="suggestions" class="space-y-4 opacity-50">
+            <!-- 建议内容 -->
+            <div class="p-4 border border-neutral-200 rounded-lg bg-neutral-50 transition-all duration-300">
+              <div class="font-medium flex items-center">
+                <span class="w-2 h-2 rounded-full bg-primary mr-2"></span>
+                <span class="transition-colors duration-300">新链接期（0-100单）</span>
+              </div>
+              <div class="mt-2 text-sm">
+                <div class="mb-1"><span class="font-medium transition-colors duration-300">建议ROI范围：</span><span id="suggestNew" class="transition-colors duration-300">--</span></div>
+                <div class="mb-1"><span class="font-medium transition-colors duration-300">核心目标：</span><span class="transition-colors duration-300">冷启动、积累销量和评价</span></div>
+                <div><span class="font-medium transition-colors duration-300">操作建议：</span><span class="transition-colors duration-300">优先使用全站推广，搭配多多进宝快速起量</span></div>
+              </div>
+            </div>
+            
+            <div class="p-4 border border-neutral-200 rounded-lg bg-neutral-50 transition-all duration-300">
+              <div class="font-medium flex items-center">
+                <span class="w-2 h-2 rounded-full bg-warning mr-2"></span>
+                <span class="transition-colors duration-300">成长期（100-300单）</span>
+              </div>
+              <div class="mt-2 text-sm">
+                <div class="mb-1"><span class="font-medium transition-colors duration-300">建议ROI范围：</span><span id="suggestGrowth" class="transition-colors duration-300">--</span></div>
+                <div class="mb-1"><span class="font-medium transition-colors duration-300">核心目标：</span><span class="transition-colors duration-300">稳定流量、提升转化效率</span></div>
+                <div><span class="font-medium transition-colors duration-300">操作建议：</span><span class="transition-colors duration-300">提高全站推广ROI，增加搜索推广精准词投放</span></div>
+              </div>
+            </div>
+            
+            <div class="p-4 border border-neutral-200 rounded-lg bg-neutral-50 transition-all duration-300">
+              <div class="font-medium flex items-center">
+                <span class="w-2 h-2 rounded-full bg-success mr-2"></span>
+                <span class="transition-colors duration-300">成熟期（300单+）</span>
+              </div>
+              <div class="mt-2 text-sm">
+                <div class="mb-1"><span class="font-medium transition-colors duration-300">建议ROI范围：</span><span id="suggestMature" class="transition-colors duration-300">--</span></div>
+                <div class="mb-1"><span class="font-medium transition-colors duration-300">核心目标：</span><span class="transition-colors duration-300">提高利润、筛选优质流量</span></div>
+                <div><span class="font-medium transition-colors duration-300">操作建议：</span><span class="transition-colors duration-300">设置较高ROI，降低多多进宝佣金比例</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-xl p-5 card-elevation-1 transition-all duration-300">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <i class="fa fa-wrench text-primary mr-2"></i>
+            <span class="transition-colors duration-300">实用工具</span>
+          </h2>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button id="saveCalculation" class="flex flex-col items-center justify-center p-3 border border-neutral-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors btn-transition" disabled>
+              <i class="fa fa-history text-primary text-xl mb-1"></i>
+              <span class="text-sm transition-colors duration-300">保存记录</span>
+            </button>
+            
+            <button id="exportExcel" class="flex flex-col items-center justify-center p-3 border border-neutral-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors btn-transition" disabled>
+              <i class="fa fa-file-excel-o text-success text-xl mb-1"></i>
+              <span class="text-sm transition-colors duration-300">导出当前</span>
+            </button>
+            
+            <button id="exportAllExcel" class="flex flex-col items-center justify-center p-3 border border-neutral-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors btn-transition" disabled>
+              <i class="fa fa-file-excel-o text-success text-xl mb-1"></i>
+              <span class="text-sm transition-colors duration-300">导出全部</span>
+            </button>
+            
+            <button id="showHistory" class="flex flex-col items-center justify-center p-3 border border-neutral-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors btn-transition">
+              <i class="fa fa-list text-neutral-600 text-xl mb-1 transition-colors duration-300"></i>
+              <span class="text-sm transition-colors duration-300">历史记录</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 历史记录模态框 -->
+    <div id="historyModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
+      <div class="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col transition-all duration-300">
+        <div class="p-5 border-b border-neutral-200 flex justify-between items-center transition-all duration-300">
+          <h3 class="text-lg font-semibold transition-colors duration-300">计算历史记录</h3>
+          <div class="flex space-x-2">
+            <button id="exportHistoryExcel" class="text-sm text-success hover:text-success/80 flex items-center btn-transition">
+              <i class="fa fa-file-excel-o mr-1"></i>导出全部
+            </button>
+            <button id="closeHistory" class="p-2 hover:bg-neutral-100 rounded-full transition-colors duration-300">
+              <i class="fa fa-times text-neutral-500 transition-colors duration-300"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div id="historyList" class="flex-1 overflow-y-auto p-5 space-y-3 transition-colors duration-300">
+          <div class="text-center text-neutral-500 py-10 transition-colors duration-300" id="emptyHistory">
+            <i class="fa fa-folder-open-o text-4xl mb-3 text-neutral-300 transition-colors duration-300"></i>
+            <p class="transition-colors duration-300">暂无历史记录</p>
+          </div>
+        </div>
+        
+        <div class="p-5 border-t border-neutral-200 flex justify-end transition-all duration-300">
+          <button id="clearHistory" class="text-danger hover:text-danger/80 px-4 py-2 text-sm flex items-center btn-transition">
+            <i class="fa fa-trash-o mr-1"></i>清空记录
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-neutral-200 mt-10 transition-all duration-300">
+    <div class="container mx-auto px-4 py-6 text-center text-neutral-500 text-sm transition-colors duration-300">
+      <p>电商推广ROI计算器 &copy; 2025 - <a href="https://other.azad.asia" target="_blank" rel="noopener noreferrer" 
+           >Azad的实验室</a></p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 全局变量
+      let currentResult = null;
+      let currentSuggestions = { new: '--', growth: '--', mature: '--' };
+      let historyRecords = JSON.parse(localStorage.getItem('roiCalculatorHistory') || '[]');
+      let currentAiResponse = '';
+      let isDarkMode = false;
+      let useBuiltinAi = true;
+      let abortController = null; // 用于取消流式请求
+      
+      // 默认AI配置 - 智谱AI
+      const DEFAULT_AI_SETTINGS = {
+        url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+        key: '5284989cb3c3eebf832d8289d3c0901b.FPF3vOjUgXYUhWFh',
+        model: 'glm-4.5-flash'
+      };
+      
+      // 用户自定义AI配置
+      let customAiSettings = {
+        url: '',
+        key: '',
+        model: ''
+      };
+      
+      const formElements = {
+        productName: document.getElementById('productName'),
+        cost: document.getElementById('cost'),
+        price: document.getElementById('price'),
+        commission: document.getElementById('commission'),
+        returnRate: document.getElementById('returnRate'),
+        apiUrl: document.getElementById('apiUrl'),
+        apiKey: document.getElementById('apiKey'),
+        aiModel: document.getElementById('aiModel'),
+        aiPrompt: document.getElementById('aiPrompt')
+      };
+      
+      const resultElements = {
+        productNameDisplay: document.getElementById('productNameDisplay'),
+        step1: document.getElementById('step1'),
+        step2: document.getElementById('step2'),
+        step3: document.getElementById('step3'),
+        step4: document.getElementById('step4'),
+        roiResult: document.getElementById('roiResult'),
+        resultExplanation: document.getElementById('resultExplanation'),
+        suggestNew: document.getElementById('suggestNew'),
+        suggestGrowth: document.getElementById('suggestGrowth'),
+        suggestMature: document.getElementById('suggestMature'),
+        calculationSteps: document.getElementById('calculationSteps'),
+        suggestions: document.getElementById('suggestions'),
+        aiResponseContainer: document.getElementById('aiResponseContainer'),
+        aiLoading: document.getElementById('aiLoading'),
+        aiError: document.getElementById('aiError'),
+        aiResponse: document.getElementById('aiResponse'),
+        copyAiResponse: document.getElementById('copyAiResponse'),
+        builtinAiInfo: document.getElementById('builtinAiInfo'),
+        customAiSettings: document.getElementById('customAiSettings')
+      };
+      
+      const buttons = {
+        saveCalculation: document.getElementById('saveCalculation'),
+        exportExcel: document.getElementById('exportExcel'),
+        exportAllExcel: document.getElementById('exportAllExcel'),
+        exportHistoryExcel: document.getElementById('exportHistoryExcel'),
+        showHistory: document.getElementById('showHistory'),
+        closeHistory: document.getElementById('closeHistory'),
+        clearHistory: document.getElementById('clearHistory'),
+        themeToggle: document.getElementById('themeToggle'),
+        generatePrompt: document.getElementById('generatePrompt'),
+        sendToAi: document.getElementById('sendToAi'),
+        useBuiltinAi: document.getElementById('useBuiltinAi'),
+        useCustomAi: document.getElementById('useCustomAi')
+      };
+      
+      const modals = {
+        historyModal: document.getElementById('historyModal'),
+        historyList: document.getElementById('historyList'),
+        emptyHistory: document.getElementById('emptyHistory'),
+        modalContent: document.querySelector('#historyModal > div')
+      };
+      
+      // 初始化Marked
+      marked.setOptions({
+        highlight: function(code, lang) {
+          if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(code, { language: lang }).value;
+          }
+          return hljs.highlightAuto(code).value;
+        },
+        breaks: true,
+        gfm: true
+      });
+      
+      // 绑定所有事件
+      function bindEvents() {
+        // 输入框事件
+        [formElements.cost, formElements.price, formElements.commission, formElements.returnRate].forEach(el => {
+          el.addEventListener('input', calculateROI);
+          el.addEventListener('change', calculateROI);
+        });
+        
+        // 按钮事件
+        buttons.saveCalculation.addEventListener('click', saveCurrentCalculation);
+        buttons.exportExcel.addEventListener('click', exportToExcel);
+        buttons.exportAllExcel.addEventListener('click', exportAllToExcel);
+        buttons.exportHistoryExcel.addEventListener('click', exportAllToExcel);
+        buttons.showHistory.addEventListener('click', () => {
+          modals.historyModal.classList.remove('hidden');
+          modals.historyModal.classList.add('flex');
+        });
+        buttons.closeHistory.addEventListener('click', () => {
+          modals.historyModal.classList.add('hidden');
+          modals.historyModal.classList.remove('flex');
+        });
+        buttons.clearHistory.addEventListener('click', clearHistory);
+        buttons.themeToggle.addEventListener('click', toggleDarkMode);
+        buttons.generatePrompt.addEventListener('click', generateAiPrompt);
+        buttons.sendToAi.addEventListener('click', toggleAiRequest); // 修改为切换请求状态
+        resultElements.copyAiResponse.addEventListener('click', copyAiResponseToClipboard);
+        
+        // AI模式切换
+        buttons.useBuiltinAi.addEventListener('click', () => {
+          useBuiltinAi = true;
+          updateAiModeUI();
+        });
+        
+        buttons.useCustomAi.addEventListener('click', () => {
+          useBuiltinAi = false;
+          updateAiModeUI();
+        });
+        
+        // 自定义AI设置输入事件
+        [formElements.apiUrl, formElements.apiKey, formElements.aiModel].forEach(el => {
+          el.addEventListener('change', saveCustomAiSettings);
+        });
+        
+        // 点击模态框外部关闭
+        modals.historyModal.addEventListener('click', (e) => {
+          if (e.target === modals.historyModal) {
+            modals.historyModal.classList.add('hidden');
+            modals.historyModal.classList.remove('flex');
+          }
+        });
+      }
+      
+      // 更新AI模式UI
+      function updateAiModeUI() {
+        if (useBuiltinAi) {
+          buttons.useBuiltinAi.classList.remove('bg-neutral-100', 'text-neutral-700');
+          buttons.useBuiltinAi.classList.add('bg-primary', 'text-white');
+          buttons.useCustomAi.classList.remove('bg-primary', 'text-white');
+          buttons.useCustomAi.classList.add('bg-neutral-100', 'text-neutral-700');
+          
+          resultElements.builtinAiInfo.classList.remove('hidden');
+          resultElements.customAiSettings.classList.add('hidden');
+        } else {
+          buttons.useBuiltinAi.classList.remove('bg-primary', 'text-white');
+          buttons.useBuiltinAi.classList.add('bg-neutral-100', 'text-neutral-700');
+          buttons.useCustomAi.classList.remove('bg-neutral-100', 'text-neutral-700');
+          buttons.useCustomAi.classList.add('bg-primary', 'text-white');
+          
+          resultElements.builtinAiInfo.classList.add('hidden');
+          resultElements.customAiSettings.classList.remove('hidden');
+          loadCustomAiSettings();
+        }
+      }
+      
+      // 保存/加载自定义AI设置
+      function saveCustomAiSettings() {
+        customAiSettings = {
+          url: formElements.apiUrl.value.trim(),
+          key: formElements.apiKey.value.trim(),
+          model: formElements.aiModel.value.trim()
+        };
+        localStorage.setItem('roiCalculatorCustomAiSettings', JSON.stringify(customAiSettings));
+      }
+      
+      function loadCustomAiSettings() {
+        const saved = JSON.parse(localStorage.getItem('roiCalculatorCustomAiSettings') || '{}');
+        if (saved) {
+          customAiSettings = saved;
+          formElements.apiUrl.value = saved.url || '';
+          formElements.apiKey.value = saved.key || '';
+          formElements.aiModel.value = saved.model || '';
+        }
+      }
+      
+      // 计算ROI
+      function calculateROI() {
+        try {
+          if (!formElements.cost.value || !formElements.price.value) {
+            disableActionButtons(true);
+            return;
+          }
+          
+          const productName = formElements.productName.value || '未命名商品';
+          const cost = parseFloat(formElements.cost.value);
+          const price = parseFloat(formElements.price.value);
+          const commissionRate = parseFloat(formElements.commission.value) / 100;
+          const returnRate = parseFloat(formElements.returnRate.value) / 100;
+          
+          if (price <= cost || isNaN(cost) || isNaN(price)) {
+            resultElements.roiResult.textContent = '错误';
+            resultElements.roiResult.className = 'text-5xl font-bold mb-4 text-danger transition-colors duration-300';
+            resultElements.resultExplanation.textContent = '请输入有效的成本和售价（售价必须大于成本）';
+            disableActionButtons(true);
+            return;
+          }
+          
+          const commission = price * commissionRate;
+          const totalCost = cost + commission;
+          const grossMargin = (price - totalCost) / price;
+          const roi = (1 / grossMargin) * (1 + returnRate);
+          
+          const newMin = (roi * 1.05).toFixed(1);
+          const newMax = (roi * 1.2).toFixed(1);
+          const growthMin = (roi * 1.25).toFixed(1);
+          const growthMax = (roi * 1.5).toFixed(1);
+          const matureMin = (roi * 1.6).toFixed(1);
+          const matureMax = (roi * 2.0).toFixed(1);
+          
+          currentResult = {
+            productName,
+            cost, price, commissionRate: commissionRate * 100,
+            returnRate: returnRate * 100,
+            commission, totalCost,
+            grossMargin: grossMargin * 100,
+            roi,
+            suggestions: { new: `${newMin}-${newMax}`, growth: `${growthMin}-${growthMax}`, mature: `${matureMin}-${matureMax}` },
+            timestamp: new Date().toISOString()
+          };
+          
+          resultElements.productNameDisplay.textContent = `商品: ${productName}`;
+          resultElements.step1.textContent = `抽成金额 = ${price.toFixed(2)}元 × ${(commissionRate * 100).toFixed(1)}% = ${commission.toFixed(2)}元`;
+          resultElements.step2.textContent = `实际总成本 = ${cost.toFixed(2)}元 + ${commission.toFixed(2)}元 = ${totalCost.toFixed(2)}元`;
+          resultElements.step3.textContent = `毛利率 = (${price.toFixed(2)}-${totalCost.toFixed(2)})/${price.toFixed(2)} × 100% = ${(grossMargin * 100).toFixed(1)}%`;
+          resultElements.step4.textContent = `保底ROI = (1/${grossMargin.toFixed(4)}) × (1+${returnRate.toFixed(2)}) = ${roi.toFixed(2)}`;
+          
+          resultElements.roiResult.textContent = roi.toFixed(2);
+          resultElements.roiResult.className = `text-5xl font-bold mb-4 transition-colors duration-300 ${roi < 1.5 ? 'text-success' : roi < 2.5 ? 'text-warning' : 'text-danger'}`;
+          
+          resultElements.resultExplanation.innerHTML = `
+            保底ROI <strong>${roi.toFixed(2)}</strong>：每投入1元推广费，至少需带来${roi.toFixed(2)}元销售额才不会亏本。<br>
+            产品毛利率为${(grossMargin * 100).toFixed(1)}%，盈利能力${grossMargin > 0.5 ? '较强' : grossMargin > 0.3 ? '中等' : '较弱'}。
+          `;
+          
+          resultElements.suggestNew.textContent = `${newMin} - ${newMax}`;
+          resultElements.suggestGrowth.textContent = `${growthMin} - ${growthMax}`;
+          resultElements.suggestMature.textContent = `${matureMin} - ${matureMax}`;
+          
+          resultElements.calculationSteps.classList.remove('opacity-50');
+          resultElements.suggestions.classList.remove('opacity-50');
+          disableActionButtons(false);
+        } catch (error) {
+          console.error('计算错误:', error);
+          showToast('计算失败，请检查输入参数', 'error');
+        }
+      }
+      
+      // 保存当前计算
+      function saveCurrentCalculation() {
+        if (!currentResult) return;
+        
+        const isDuplicate = historyRecords.some(record => 
+          record.productName === currentResult.productName &&
+          record.cost === currentResult.cost &&
+          record.price === currentResult.price &&
+          record.commissionRate === currentResult.commissionRate &&
+          record.returnRate === currentResult.returnRate
+        );
+        
+        if (isDuplicate) {
+          showToast('相同参数的记录已存在', 'warning');
+          return;
+        }
+        
+        historyRecords.unshift({ ...currentResult, id: Date.now() });
+        if (historyRecords.length > 30) historyRecords = historyRecords.slice(0, 30);
+        
+        localStorage.setItem('roiCalculatorHistory', JSON.stringify(historyRecords));
+        renderHistory();
+        updateExportAllButton();
+        showToast('记录已保存');
+      }
+      
+      // 渲染历史记录
+      function renderHistory() {
+        modals.historyList.innerHTML = '';
+        modals.historyList.appendChild(modals.emptyHistory);
+        
+        if (historyRecords.length === 0) {
+          modals.emptyHistory.classList.remove('hidden');
+          return;
+        }
+        
+        modals.emptyHistory.classList.add('hidden');
+        
+        historyRecords.forEach(record => {
+          const date = new Date(record.timestamp);
+          const dateStr = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+          
+          const recordEl = document.createElement('div');
+          recordEl.className = `p-3 border transition-colors duration-300 rounded-lg hover:border-primary transition-colors card-hover ${isDarkMode ? 'border-dark-border bg-dark-card' : 'border-neutral-200 bg-white'}`;
+          recordEl.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-medium transition-colors duration-300">${record.productName}</div>
+                <div class="font-medium mt-1">保底ROI: <span class="${getRoiColorClass(record.roi)}">${record.roi.toFixed(2)}</span></div>
+                <div class="text-xs transition-colors duration-300 ${isDarkMode ? 'text-dark-textLight' : 'text-neutral-500'} mt-1">${dateStr}</div>
+              </div>
+              <div class="flex space-x-1">
+                <button class="use-history p-1 hover:bg-neutral-100 dark:hover:bg-dark-border rounded transition-colors duration-300" data-id="${record.id}">
+                  <i class="fa fa-refresh transition-colors duration-300 ${isDarkMode ? 'text-dark-text' : 'text-neutral-600'}"></i>
+                </button>
+                <button class="delete-history p-1 hover:bg-neutral-100 dark:hover:bg-dark-border rounded transition-colors duration-300" data-id="${record.id}">
+                  <i class="fa fa-trash-o transition-colors duration-300 ${isDarkMode ? 'text-dark-text' : 'text-neutral-600'}"></i>
+                </button>
+              </div>
+            </div>
+            <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+              <div class="transition-colors duration-300 ${isDarkMode ? 'text-dark-textLight' : 'text-neutral-600'}">成本: ¥${record.cost.toFixed(2)}</div>
+              <div class="transition-colors duration-300 ${isDarkMode ? 'text-dark-textLight' : 'text-neutral-600'}">售价: ¥${record.price.toFixed(2)}</div>
+              <div class="transition-colors duration-300 ${isDarkMode ? 'text-dark-textLight' : 'text-neutral-600'}">抽成: ${record.commissionRate.toFixed(1)}%</div>
+              <div class="transition-colors duration-300 ${isDarkMode ? 'text-dark-textLight' : 'text-neutral-600'}">退货率: ${record.returnRate.toFixed(1)}%</div>
+            </div>
+          `;
+          
+          modals.historyList.appendChild(recordEl);
+        });
+        
+        document.querySelectorAll('.use-history').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = parseInt(btn.dataset.id);
+            const record = historyRecords.find(r => r.id === id);
+            if (record) {
+              formElements.productName.value = record.productName;
+              formElements.cost.value = record.cost.toFixed(2);
+              formElements.price.value = record.price.toFixed(2);
+              formElements.commission.value = record.commissionRate.toFixed(1);
+              formElements.returnRate.value = record.returnRate.toFixed(1);
+              calculateROI();
+              modals.historyModal.classList.add('hidden');
+            }
+          });
+        });
+        
+        document.querySelectorAll('.delete-history').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = parseInt(btn.dataset.id);
+            historyRecords = historyRecords.filter(r => r.id !== id);
+            localStorage.setItem('roiCalculatorHistory', JSON.stringify(historyRecords));
+            renderHistory();
+            updateExportAllButton();
+          });
+        });
+      }
+      
+      // 导出功能
+      function exportToExcel() {
+        if (!currentResult) return;
+        
+        try {
+          const data = [
+            ['参数', '数值'],
+            ['商品名称', currentResult.productName],
+            ['产品基础成本', `¥${currentResult.cost.toFixed(2)}`],
+            ['产品售价', `¥${currentResult.price.toFixed(2)}`],
+            ['平台抽成比例', `${currentResult.commissionRate.toFixed(1)}%`],
+            ['退货率', `${currentResult.returnRate.toFixed(1)}%`],
+            ['', ''],
+            ['计算结果', '数值'],
+            ['平台抽成金额', `¥${currentResult.commission.toFixed(2)}`],
+            ['实际总成本', `¥${currentResult.totalCost.toFixed(2)}`],
+            ['产品毛利率', `${currentResult.grossMargin.toFixed(1)}%`],
+            ['保底ROI', currentResult.roi.toFixed(2)],
+            ['', ''],
+            ['分阶段建议ROI', '范围'],
+            ['新链接期', currentResult.suggestions.new],
+            ['成长期', currentResult.suggestions.growth],
+            ['成熟期', currentResult.suggestions.mature]
+          ];
+          
+          const ws = XLSX.utils.aoa_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "ROI计算结果");
+          
+          const date = new Date();
+          const fileName = `${currentResult.productName}_ROI_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+          showToast('导出成功');
+        } catch (error) {
+          console.error('导出失败:', error);
+          showToast('导出失败，请重试', 'error');
+        }
+      }
+      
+      function exportAllToExcel() {
+        if (historyRecords.length === 0) return;
+        
+        try {
+          const data = [
+            ['商品名称', '成本(元)', '售价(元)', '抽成比例(%)', '退货率(%)', 
+             '抽成金额(元)', '实际总成本(元)', '毛利率(%)', '保底ROI',
+             '新链接期建议', '成长期建议', '成熟期建议', '计算时间']
+          ];
+          
+          historyRecords.forEach(record => {
+            const date = new Date(record.timestamp);
+            data.push([
+              record.productName,
+              record.cost.toFixed(2),
+              record.price.toFixed(2),
+              record.commissionRate.toFixed(1),
+              record.returnRate.toFixed(1),
+              record.commission.toFixed(2),
+              record.totalCost.toFixed(2),
+              record.grossMargin.toFixed(1),
+              record.roi.toFixed(2),
+              record.suggestions?.new || '',
+              record.suggestions?.growth || '',
+              record.suggestions?.mature || '',
+              date.toLocaleString()
+            ]);
+          });
+          
+          const ws = XLSX.utils.aoa_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "ROI历史记录");
+          
+          const date = new Date();
+          const fileName = `ROI历史汇总_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+          modals.historyModal.classList.add('hidden');
+          showToast('全部记录导出成功');
+        } catch (error) {
+          console.error('导出失败:', error);
+          showToast('导出失败，请重试', 'error');
+        }
+      }
+      
+      // 清空历史
+      function clearHistory() {
+        if (historyRecords.length === 0) return;
+        if (confirm('确定清空所有历史记录？此操作不可恢复')) {
+          historyRecords = [];
+          localStorage.setItem('roiCalculatorHistory', JSON.stringify(historyRecords));
+          renderHistory();
+          updateExportAllButton();
+        }
+      }
+      
+      // 生成AI提问
+      function generateAiPrompt() {
+        if (!formElements.cost.value || !formElements.price.value) {
+          showToast('请先填写成本和售价', 'warning');
+          return;
+        }
+        
+        const prompt = `${formElements.productName.value || '某商品'}的参数：成本¥${formElements.cost.value}，售价¥${formElements.price.value}，抽成${formElements.commission.value}%，退货率${formElements.returnRate.value}%。请据此计算用于电商平台的推广保本ROI，帮助优化电商推广策略。语言要精简但通俗易懂，同时要有清晰的计算过程展示、精确计算逻辑、分阶段ROI建议以及最终总结。`;
+        formElements.aiPrompt.value = prompt;
+        resultElements.aiResponseContainer.classList.remove('hidden');
+      }
+      
+      // 切换AI请求状态（新增：支持取消请求）
+      function toggleAiRequest() {
+        if (abortController) {
+          // 取消当前请求
+          abortController.abort();
+          abortController = null;
+          resetAiUI();
+          buttons.sendToAi.innerHTML = '<i class="fa fa-paper-plane mr-2"></i>发送给AI';
+          showToast('已取消请求');
+          return;
+        }
+        
+        // 开始新请求
+        sendToAi();
+      }
+      
+      // 流式输出AI回复
+      async function sendToAi() {
+        const aiSettings = useBuiltinAi ? DEFAULT_AI_SETTINGS : customAiSettings;
+        const prompt = formElements.aiPrompt.value.trim();
+        
+        if (!aiSettings.url || !aiSettings.key || !aiSettings.model) {
+          showToast('请完善AI配置信息', 'warning');
+          return;
+        }
+        
+        if (!prompt) {
+          showToast('请输入提问内容', 'warning');
+          return;
+        }
+        
+        // 重置状态并显示加载
+        resetAiUI();
+        resultElements.aiResponseContainer.classList.remove('hidden');
+        resultElements.aiLoading.classList.remove('hidden');
+        buttons.sendToAi.innerHTML = '<i class="fa fa-times mr-2"></i>取消';
+        
+        // 创建中止控制器
+        abortController = new AbortController();
+        currentAiResponse = '';
+        
+        try {
+          // 构建请求体，启用流式输出
+          const requestBody = {
+            model: aiSettings.model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            stream: true  // 关键参数：启用流式输出
+          };
+          
+          const response = await fetch(aiSettings.url, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json', 
+              'Authorization': `Bearer ${aiSettings.key}` 
+            },
+            body: JSON.stringify(requestBody),
+            signal: abortController.signal  // 关联中止信号
+          });
+          
+          if (!response.ok) {
+            throw new Error(`请求失败: ${response.status} ${response.statusText}`);
+          }
+          
+          // 获取响应流读取器
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          
+          // 逐步读取流数据
+          while (!done) {
+            const { value, done: doneReading } = await reader.read();
+            done = doneReading;
+            
+            if (value) {
+              // 解码并处理数据（智谱AI流式响应为NDJSON格式）
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n').filter(line => line.trim() !== '');
+              
+              for (const line of lines) {
+                // 去除数据前缀（如"data: "）
+                const data = line.startsWith('data: ') ? line.slice(6) : line;
+                
+                if (data === '[DONE]') {
+                  // 流结束标志
+                  done = true;
+                  break;
+                }
+                
+                try {
+                  const json = JSON.parse(data);
+                  // 提取内容
+                  const content = json.choices?.[0]?.delta?.content || '';
+                  
+                  if (content) {
+                    currentAiResponse += content;
+                    // 实时更新UI
+                    resultElements.aiResponse.innerHTML = marked.parse(currentAiResponse);
+                    // 自动滚动到底部
+                    resultElements.aiResponse.scrollTop = resultElements.aiResponse.scrollHeight;
+                  }
+                } catch (e) {
+                  console.warn('解析流式数据失败:', e);
+                }
+              }
+            }
+          }
+          
+          // 流结束处理
+          resultElements.copyAiResponse.disabled = false;
+          showToast('AI回复已完成');
+        } catch (error) {
+          if (error.name !== 'AbortError') {  // 忽略用户主动取消的错误
+            resultElements.aiError.classList.remove('hidden');
+            resultElements.aiError.textContent = `AI请求失败: ${error.message}`;
+            console.error('AI请求错误:', error);
+          }
+        } finally {
+          // 清理状态
+          resultElements.aiLoading.classList.add('hidden');
+          buttons.sendToAi.innerHTML = '<i class="fa fa-paper-plane mr-2"></i>发送给AI';
+          abortController = null;
+        }
+      }
+      
+      // 重置AI相关UI
+      function resetAiUI() {
+        resultElements.aiError.classList.add('hidden');
+        resultElements.aiResponse.innerHTML = '';
+        resultElements.copyAiResponse.disabled = true;
+      }
+      
+      // 复制AI回复
+      function copyAiResponseToClipboard() {
+        if (!currentAiResponse) return;
+        
+        navigator.clipboard.writeText(currentAiResponse).then(() => {
+          const original = resultElements.copyAiResponse.innerHTML;
+          resultElements.copyAiResponse.innerHTML = '<i class="fa fa-check mr-1"></i>已复制';
+          setTimeout(() => resultElements.copyAiResponse.innerHTML = original, 2000);
+        }).catch(() => {
+          showToast('复制失败，请手动复制', 'error');
+        });
+      }
+      
+      // 黑暗模式切换
+      function toggleDarkMode() {
+        isDarkMode = !isDarkMode;
+        const themeIcon = buttons.themeToggle.querySelector('i');
+        
+        document.body.classList.toggle('dark', isDarkMode);
+        
+        if (isDarkMode) {
+          themeIcon.classList.remove('fa-moon-o', 'text-neutral-600');
+          themeIcon.classList.add('fa-sun-o', 'text-yellow-400');
+        } else {
+          themeIcon.classList.remove('fa-sun-o', 'text-yellow-400');
+          themeIcon.classList.add('fa-moon-o', 'text-neutral-600');
+        }
+        
+        renderHistory();
+      }
+      
+      // 显示提示
+      function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-10 opacity-0 ${
+          type === 'success' ? 'bg-success text-white' : 
+          type === 'warning' ? 'bg-warning text-white' : 'bg-danger text-white'
+        }`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
+        setTimeout(() => {
+          toast.classList.add('translate-y-10', 'opacity-0');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      }
+      
+      // 启用/禁用按钮
+      function disableActionButtons(disabled) {
+        buttons.saveCalculation.disabled = disabled;
+        buttons.exportExcel.disabled = disabled;
+        
+        if (disabled) {
+          buttons.saveCalculation.classList.add('opacity-50', 'cursor-not-allowed');
+          buttons.exportExcel.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+          buttons.saveCalculation.classList.remove('opacity-50', 'cursor-not-allowed');
+          buttons.exportExcel.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      }
+      
+      // 更新导出全部按钮状态
+      function updateExportAllButton() {
+        buttons.exportAllExcel.disabled = historyRecords.length === 0;
+        if (historyRecords.length === 0) {
+          buttons.exportAllExcel.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+          buttons.exportAllExcel.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      }
+      
+      // 根据ROI获取颜色类
+      function getRoiColorClass(roi) {
+        return roi < 1.5 ? 'text-success' : roi < 2.5 ? 'text-warning' : 'text-danger';
+      }
+      
+      // 初始化
+      function init() {
+        bindEvents();
+        updateAiModeUI();
+        renderHistory();
+        updateExportAllButton();
+      }
+      
+      // 启动应用
+      init();
+    });
+  </script>
+</body>
+</html>
